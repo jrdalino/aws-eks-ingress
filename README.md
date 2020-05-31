@@ -11,7 +11,7 @@ $ eksctl utils associate-iam-oidc-provider --cluster=eksworkshop-eksctl --approv
 [ℹ]  using region us-east-2
 [ℹ]  will create IAM Open ID Connect provider for cluster "eksworkshop" in "us-east-2"
 [✔]  created IAM Open ID Connect provider for cluster "eksworkshop" in "us-east-2"
-```
+```an
 
 - Deploy RBAC Roles and RoleBindings needed by the AWS ALB Ingress controller:
 ```
@@ -93,10 +93,10 @@ metadata:
 spec:
   tls:
   - hosts:
-    - anthonycornell.com
+    - example.com
     secretName: tls-secret
   rules:
-  - host: anthonycornell.com
+  - host: example.com
     http:
       paths:
         - path: /apple
