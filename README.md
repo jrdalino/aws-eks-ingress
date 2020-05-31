@@ -2,7 +2,6 @@
 
 ## ALB Ingress Controller on Amazon EKS
 
-### ALB Ingress Controller
 - Create an IAM OIDC provider and associate it with your cluster
 ```
 $ eksctl utils associate-iam-oidc-provider --cluster=eksworkshop-eksctl --approve
@@ -56,6 +55,74 @@ $ kubectl get ingress/2048-ingress -n 2048-game
 ```
 
 ## NLB + Nginx Ingress
+- Start by creating the mandatory resources for NGINX Ingress in your cluster. This also creates the NLB.
+```
+$ kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller 0.32.0/deploy/static/provider/aws/deploy.yaml
+```
+
+- Create Services
+```
+$ kubectl apply -f https://raw.githubusercontent.com/cornellanthony/nlb-nginxIngress-eks/master/apple.yaml 
+$ kubectl apply -f https://raw.githubusercontent.com/cornellanthony/nlb-nginxIngress-eks/master/banana.yaml
+```
+
+- Create a Self Signed Certificate
+```
+$ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout 
+$ tls.key -out tls.crt -subj "/CN=example.com/O=example.com"
+```
+
+- Create the secret in the cluster
+```
+$ kubectl create secret tls tls-secret --key tls.key --cert tls.crt
+```
+
+- Create the Ingress
+```
+$ kubectl create -f https://raw.githubusercontent.com/cornellanthony/nlb-nginxIngress-eks/master/example-ingress.yaml
+```
+```
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: example-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  tls:
+  - hosts:
+    - anthonycornell.com
+    secretName: tls-secret
+  rules:
+  - host: anthonycornell.com
+    http:
+      paths:
+        - path: /apple
+          backend:
+            serviceName: apple-service
+            servicePort: 5678
+        - path: /banana
+          backend:
+            serviceName: banana-service
+            servicePort: 5678
+```
+
+- Set up Route 53 to have your domain pointed to the NLB (optional):
+```
+example.com.           A.    
+ALIAS abf3d14967d6511e9903d12aa583c79b-e3b2965682e9fbde.elb.us-east-1.amazonaws.com
+```
+
+- Test your application:
+```
+$ curl  https://example.com/banana -k
+Banana
+ 
+$ curl  https://example.com/apple -k
+Apple
+```
 
 ## References
 - https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
